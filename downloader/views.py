@@ -87,6 +87,10 @@ import yt_dlp
 from django.shortcuts import render, redirect
 from django.contrib import messages
 import os
+import os
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import yt_dlp
 
 def download_video(request):
     if request.method == 'POST':
@@ -98,6 +102,11 @@ def download_video(request):
         try:
             # Define the path to the cookies file in the /tmp directory
             cookies_file = os.path.join('/tmp', 'youtube_cookies.txt')
+
+            # Check if the cookies file exists
+            if not os.path.exists(cookies_file):
+                messages.error(request, "Cookies file not found!")
+                return redirect('home')
 
             # yt-dlp options with cookies
             ydl_opts = {
