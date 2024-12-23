@@ -110,6 +110,12 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 import yt_dlp
 
+import os
+import shutil
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import yt_dlp
+
 def download_video(request):
     if request.method == 'POST':
         url = request.POST.get('url')
@@ -118,10 +124,16 @@ def download_video(request):
             return redirect('home')
 
         try:
-            # Define the source and destination paths for the cookies file
+            # Get and print the current working directory
             current_dir = os.path.dirname(os.path.abspath(__file__))
+            print(f"Current Directory: {current_dir}")
+
+            # Define the source and destination paths for the cookies file
             source_cookies_file = os.path.join(current_dir, 'youtube_cookies.txt')
             destination_cookies_file = '/tmp/youtube_cookies.txt'
+
+            # Print the expected path of the cookies file
+            print(f"Source Cookies File Path: {source_cookies_file}")
 
             # Check if the source cookies file exists
             if not os.path.exists(source_cookies_file):
