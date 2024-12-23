@@ -43,7 +43,7 @@ import requests
 from django.http import StreamingHttpResponse, Http404
 import yt_dlp
 import requests
-
+'''
 def stream_video(request):
     if request.method == 'POST':
         url = request.POST.get('url')
@@ -76,6 +76,41 @@ def stream_video(request):
             response = StreamingHttpResponse(video_stream(), content_type='video/mp4')
             response['Content-Disposition'] = 'attachment; filename="video.mp4"'
             return response
+
+        except Exception as e:
+            messages.error(request, f"An error occurred: {e}")
+            return redirect('home')
+
+    return render(request, 'downloader/home.html')
+'''
+import yt_dlp
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import os
+
+def download_video(request):
+    if request.method == 'POST':
+        url = request.POST.get('url')
+        if not url:
+            messages.error(request, "No URL provided!")
+            return redirect('home')
+
+        try:
+            # Define the path to the cookies file in the /tmp directory
+            cookies_file = os.path.join('/tmp', 'youtube_cookies.txt')
+
+            # yt-dlp options with cookies
+            ydl_opts = {
+                'format': 'best',
+                'noplaylist': True,
+                'cookiefile': cookies_file,  # Pass the cookies file to yt-dlp
+            }
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+
+            messages.success(request, "Video downloaded successfully!")
+            return redirect('home')
 
         except Exception as e:
             messages.error(request, f"An error occurred: {e}")
