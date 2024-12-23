@@ -6,7 +6,7 @@ from .forms import YouTubeDownloadForm
 import yt_dlp
 import os
 from pathlib import Path
-
+'''
 def download_video(request):
     if request.method == 'POST':
         form = YouTubeDownloadForm(request.POST)
@@ -35,3 +35,40 @@ def download_video(request):
     else:
         form = YouTubeDownloadForm()
     return render(request, 'downloader/home.html', {'form': form})
+'''
+from django.http import StreamingHttpResponse, Http404
+import yt_dlp
+import requests
+
+def stream_video(request):
+    if request.method == 'POST':
+        url = request.POST.get('url')
+        if not url:
+            messages.error(request, "No URL provided!")
+            return redirect('home')
+
+        try:
+            # Use yt_dlp to fetch video information without downloading
+            ydl_opts = {'format': 'best', 'noplaylist': True}
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                video_url = info['url']  # Direct URL to the video stream
+
+            # Define generator to stream video data to the client
+            def video_stream():
+                with requests.get(video_url, stream=True) as response:
+                    response.raise_for_status()  # Ensure the request was successful
+                    for chunk in response.iter_content(chunk_size=8192):
+                        yield chunk
+
+            # Return StreamingHttpResponse to the client
+            response = StreamingHttpResponse(video_stream(), content_type='video/mp4')
+            response['Content-Disposition'] = 'attachment; filename="video.mp4"'
+            return response
+
+        except Exception as e:
+            messages.error(request, f"An error occurred: {e}")
+            return redirect('home')
+
+    # Render the input form for GET requests
+    return render(request, 'downloader/home.html')
