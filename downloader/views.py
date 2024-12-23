@@ -40,6 +40,10 @@ from django.http import StreamingHttpResponse, Http404
 import yt_dlp
 import requests
 
+from django.http import StreamingHttpResponse, Http404
+import yt_dlp
+import requests
+
 def stream_video(request):
     if request.method == 'POST':
         url = request.POST.get('url')
@@ -48,20 +52,27 @@ def stream_video(request):
             return redirect('home')
 
         try:
-            # Use yt_dlp to fetch video information without downloading
-            ydl_opts = {'format': 'best', 'noplaylist': True}
+            # Path to the cookies file
+            cookies_file = 'youtube_cookies.txt'
+
+            # Use yt_dlp to fetch video information
+            ydl_opts = {
+                'format': 'best',
+                'noplaylist': True,
+                'cookiefile': cookies_file,  # Pass the cookies file
+            }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 video_url = info['url']  # Direct URL to the video stream
 
-            # Define generator to stream video data to the client
+            # Define generator to stream video data
             def video_stream():
                 with requests.get(video_url, stream=True) as response:
-                    response.raise_for_status()  # Ensure the request was successful
+                    response.raise_for_status()
                     for chunk in response.iter_content(chunk_size=8192):
                         yield chunk
 
-            # Return StreamingHttpResponse to the client
+            # Stream the video to the client
             response = StreamingHttpResponse(video_stream(), content_type='video/mp4')
             response['Content-Disposition'] = 'attachment; filename="video.mp4"'
             return response
@@ -70,5 +81,4 @@ def stream_video(request):
             messages.error(request, f"An error occurred: {e}")
             return redirect('home')
 
-    # Render the input form for GET requests
     return render(request, 'downloader/home.html')
