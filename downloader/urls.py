@@ -20,5 +20,5 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.stream_video, name='home'),
+    path('', views.download_video, name='home'),
 ]
